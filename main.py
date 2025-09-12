@@ -1,19 +1,32 @@
-import discord
-from discord.ext import commands
-import os
+import os.path, json
+from RobloSecurity import RobloSecurityCookie
+from Avatar import downloadAvatarFromUserId
+from Flows import userIdFlow, avatarTypeFlow, useDefaultAvatarScalesFlow
 
-# Set up the bot with a prefix (example: !ping)
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
 
-@bot.event
-async def on_ready():
-    print(f"✅ Logged in as {bot.user}")
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG = json.load(
+    open(SRC_DIR + "/secret.config.json")
+    if os.path.exists(SRC_DIR + "/secret.config.json")
+    else open(SRC_DIR + "/config.json", "r")
+)
 
-@bot.command()
-async def ping(ctx):
-    await ctx.send("Pong!")
 
-# Run the bot using the TOKEN from Railway Variables
-bot.run(os.getenv("TOKEN"))
+if __name__ == "__main__":
+    cookie = RobloSecurityCookie(CONFIG["Cookie"])
+
+    while True:
+        userId = userIdFlow()
+        avatarType = avatarTypeFlow()
+        if avatarType == "R15":
+            useDefaultAvatarScales = useDefaultAvatarScalesFlow()
+        else:
+            useDefaultAvatarScales = True
+        print(f"[INFO] Downloading userId: {userId}")
+        downloadAvatarFromUserId(
+            userId,
+            CONFIG["DownloadDirectory"],
+            cookie,
+            avatarType,
+            useDefaultAvatarScales,
+        )
